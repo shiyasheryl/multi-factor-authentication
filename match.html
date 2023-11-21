@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Face Feature Matching</title>
+</head>
+<body>
+    <h1>Face Feature Matching</h1>
+
+    <!-- Add video element to display the webcam feed -->
+    <video id="video" width="640" height="480" autoplay></video><br><br>
+
+    <!-- Add a button to capture a photo -->
+    <button id="capture">Capture Photo</button><br><br>
+
+    <label for="name">Enter Your Name:</label>
+    <input type="text" id="name" name="name" required><br><br>
+
+    <input type="hidden" id="captured_image" name="captured_image" required>
+
+    <button id="submit" type="button">Match</button>
+
+    <script>
+        const video = document.getElementById('video');
+        const captureButton = document.getElementById('capture');
+        const nameInput = document.getElementById('name');
+        const imageInput = document.getElementById('captured_image');
+        const submitButton = document.getElementById('submit');
+
+        let capturedImageData = null;
+
+        // Use the navigator.mediaDevices.getUserMedia API to access the webcam
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then((stream) => {
+                video.srcObject = stream;
+            })
+            .catch((error) => {
+                console.error('Error accessing the webcam:', error);
+            });
+
+        // Add click event listener to the capture button
+        captureButton.addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+
+            // Draw the current video frame onto the canvas
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert the captured image to base64 data
+            capturedImageData = canvas.toDataURL('image/jpeg');
+            imageInput.value = capturedImageData;
+        });
+
+        // Add click event listener to the match button
+        submitButton.addEventListener('click', () => {
+            if (capturedImageData) {
+                // Send the captured image data and name to the server for matching
+                const name = nameInput.value;
+                const payload = {
+                    name: name,
+                    captured_image: capturedImageData
+                };
+
+                fetch('/match', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => response.text())
+                .then(message => {
+                    alert(message);
+                });
+            } else {
+                alert('Please capture an image before matching.');
+            }
+        });
+    </script>
+</body>
+</html>
